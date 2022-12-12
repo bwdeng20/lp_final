@@ -161,17 +161,17 @@ class CardPredictor:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         # equ = cv2.equalizeHist(img)
         # img = np.hstack((img, equ))
-        # 去掉图像中不会是车牌的区域
+        # 去掉图像中不会是车牌的区域，搜具体原理
         kernel = np.ones((20, 20), np.uint8)
         img_opening = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
-        img_opening = cv2.addWeighted(img, 1, img_opening, -1, 0);
+        img_opening = cv2.addWeighted(img, 1, img_opening, -1, 0)
 
         # 找到图像边缘
         ret, img_thresh = cv2.threshold(img_opening, 0, 255,
                                         cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         img_edge = cv2.Canny(img_thresh, 100, 200)  # 边缘检测
 
-        # 使用开运算和闭运算让图像边缘成为一个整体
+        # 使用开运算和闭运算让图像边缘成为一个整体，搜具体原理
         kernel = np.ones((self.cfg["morphologyr"], self.cfg["morphologyc"]), np.uint8)
         img_edge1 = cv2.morphologyEx(img_edge, cv2.MORPH_CLOSE, kernel)
 
@@ -400,9 +400,9 @@ class CardPredictor:
                 # gray_img = cv2.dilate(gray_img, KernelX, anchor=(-1, -1), iterations=2)
                 # gray_img = cv2.dilate(gray_img, KernelY, anchor=(-1, -1), iterations=1)
 
-                if verbose > 0:
-                    cv2.imshow("gray_img_before_class_after_erode", gray_img)  # 二值化
-                    cv2.waitKey(0)
+                # if verbose > 0:
+                #     cv2.imshow("gray_img_before_class_after_erode", gray_img)  # 二值化
+                #     cv2.waitKey(0)
 
                 # 查找水平直方图波峰
                 x_histogram = np.sum(gray_img, axis=1)
@@ -496,10 +496,10 @@ class CardPredictor:
                     part_card = train.preprocess_hog(
                         [part_card])  # preprocess_hog([part_card])
                     if i == 0:
-                        resp = self.modelchinese.predict(part_card)  # 第一个字符调用中文svm模型
+                        resp = self.modelchinese.predict(part_card).astype(int)   # 第一个字符调用中文svm模型
                         charactor = train.provinces[int(resp[0]) - PROVINCE_START]
                     else:
-                        resp = self.model.predict(part_card)  # 其他字符调用字母数字svm模型
+                        resp = self.model.predict(part_card).astype(int) # 其他字符调用字母数字svm模型
                         charactor = chr(resp[0])
                     # 判断最后一个数是否是车牌边缘，假设车牌边缘被认为是1
                     if charactor == "1" and i == len(part_cards) - 1:
@@ -520,10 +520,11 @@ if __name__ == '__main__':
     # fname = "浙AC1847"
     fname = "粤OA2160"
     # fname= "粤TD1291"
-    fname = "浙F99999"
+    # fname = "浙F99999"
 
-    using_model = "svm"
+    using_model = "svm"  # "knn"
+    using_model = "knn"
     c = CardPredictor(classifier=using_model)
     c.load_classifier()  # 加载训练好的模型
-    r, roi, color = c.predict(f"data\\val\\{fname}.jpg", verbose=1)
+    r, roi, color = c.predict(f"data\\val\\{fname}.jpg", verbose=0)
     print(r)
